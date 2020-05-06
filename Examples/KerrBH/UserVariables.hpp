@@ -49,6 +49,9 @@ enum
     c_Mom2,
     c_Mom3,
 
+    c_Madm,
+    c_Jadm,
+
     NUM_VARS
 };
 
@@ -57,11 +60,11 @@ namespace UserVariables
 static constexpr char const *variable_names[NUM_VARS] = {
     "chi",
 
-    "h11",    "h12",    "h13",    "h22", "h23", "h33",
+    "h11",    "h12",    "h13",    "h22",  "h23", "h33",
 
     "K",
 
-    "A11",    "A12",    "A13",    "A22", "A23", "A33",
+    "A11",    "A12",    "A13",    "A22",  "A23", "A33",
 
     "Theta",
 
@@ -73,7 +76,9 @@ static constexpr char const *variable_names[NUM_VARS] = {
 
     "B1",     "B2",     "B3",
 
-    "Ham",    "Mom1",   "Mom2",   "Mom3"};
+    "Ham",    "Mom1",   "Mom2",   "Mom3",
+
+    "M_adm",  "J_adm"};
 }
 
 #endif /* USERVARIABLES_HPP */

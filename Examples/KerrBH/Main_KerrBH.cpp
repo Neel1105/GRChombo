@@ -30,6 +30,15 @@ int runGRChombo(int argc, char *argv[])
     DefaultLevelFactory<KerrBHLevel> kerr_bh_level_fact(gr_amr, sim_params);
     setupAMRObject(gr_amr, kerr_bh_level_fact);
 
+    // Set up interpolator:
+    // call this after amr object setup so grids known
+    // and need it to stay in scope throughout run
+    // Note: 'interpolator' needs to be in scope when gr_amr.run() is called,
+    // otherwise pointer is lost
+    AMRInterpolator<Lagrange<4>> interpolator(
+        gr_amr, sim_params.origin, sim_params.dx, sim_params.verbosity);
+    gr_amr.set_interpolator(&interpolator);
+
     double stop_time;
     pp.get("stop_time", stop_time);
     int max_steps;
@@ -38,6 +47,8 @@ int runGRChombo(int argc, char *argv[])
     gr_amr.run(stop_time, max_steps);
 
     gr_amr.conclude();
+
+    CH_TIMER_REPORT(); // Report results when running with Chombo timers.
 
     return 0;
 }

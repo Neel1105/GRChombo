@@ -19,6 +19,9 @@
 #include "GammaCalculator.hpp"
 #include "KerrBH.hpp"
 
+#include "ADMMass.hpp"
+#include "ADMMassExtraction.hpp"
+
 void KerrBHLevel::specificAdvance()
 {
     // Enforce the trace free A_ij condition and positive chi and alpha
@@ -68,7 +71,7 @@ void KerrBHLevel::specificEvalRHS(GRLevelData &a_soln, GRLevelData &a_rhs,
     // undefined values
     BoxLoops::loop(make_compute_pack(
                        CCZ4(m_p.ccz4_params, m_dx, m_p.sigma, m_p.formulation),
-                       SetValue(0, Interval(c_Ham, c_Mom3))),
+                       SetValue(0, Interval(c_Ham, NUM_VARS - 1))),
                    a_soln, a_rhs, EXCLUDE_GHOST_CELLS);
 }
 
@@ -83,4 +86,27 @@ void KerrBHLevel::computeTaggingCriterion(FArrayBox &tagging_criterion,
                                           const FArrayBox &current_state)
 {
     BoxLoops::loop(ChiTaggingCriterion(m_dx), current_state, tagging_criterion);
+}
+
+void KerrBHLevel::specificPostTimeStep()
+{
+    CH_TIME("KerrBHLevel::specificPostTimeStep");
+    if (m_p.activate_extraction == 1)
+    {
+        // Populate the Weyl Scalar values on the grid
+        fillAllGhosts();
+        BoxLoops::loop(ADMMass(m_p.extraction_params.center, m_dx), m_state_new,
+                       m_state_new, EXCLUDE_GHOST_CELLS);
+
+        // Do the extraction on the min extraction level
+        if (m_level == m_p.extraction_params.min_extraction_level())
+        {
+            CH_TIME("ADMExtraction");
+            // Now refresh the interpolator and do the interpolation
+            m_gr_amr.m_interpolator->refresh();
+            ADMMassExtraction my_extraction(m_p.extraction_params, m_dt, m_time,
+                                            m_restart_time);
+            my_extraction.execute_query(m_gr_amr.m_interpolator);
+        }
+    }
 }

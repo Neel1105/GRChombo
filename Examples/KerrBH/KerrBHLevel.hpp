@@ -34,6 +34,9 @@ class KerrBHLevel : public GRAMRLevel
                                    const GRLevelData &a_rhs,
                                    Real a_dt) override;
 
+    // to do post each time step on every level
+    virtual void specificPostTimeStep() override;
+
     virtual void
     computeTaggingCriterion(FArrayBox &tagging_criterion,
                             const FArrayBox &current_state) override;
