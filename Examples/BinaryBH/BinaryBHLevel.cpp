@@ -138,15 +138,23 @@ void BinaryBHLevel::computeTaggingCriterion(FArrayBox &tagging_criterion,
 void BinaryBHLevel::specificPostTimeStep()
 {
     CH_TIME("BinaryBHLevel::specificPostTimeStep");
+    // Do the extraction on the min extraction level
     if (m_p.activate_extraction == 1)
     {
+        auto min_level = m_p.extraction_params.min_extraction_level();
+
+        // ensure Weyl Scalar is only calculated on full cycles of 'min_level'
+        double extraction_dt = m_dt * pow(2., m_level - min_level);
+        double finest_dt = m_dt * pow(2., m_level - m_p.max_level);
+        if (fabs(remainder(m_time, extraction_dt)) > finest_dt / 2.)
+            return;
+
         // Populate the Weyl Scalar values on the grid
         fillAllGhosts();
         BoxLoops::loop(Weyl4(m_p.extraction_params.center, m_dx), m_state_new,
                        m_state_new, EXCLUDE_GHOST_CELLS);
 
-        // Do the extraction on the min extraction level
-        if (m_level == m_p.extraction_params.min_extraction_level())
+        if (m_level == min_level)
         {
             CH_TIME("WeylExtraction");
             // Now refresh the interpolator and do the interpolation

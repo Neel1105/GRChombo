@@ -174,7 +174,7 @@ class ChomboParameters
     /// Takes a string and returns the variable enum number if the string
     /// matches one of those in UserVariables::variable_names, or returns -1
     /// otherwise
-    int variable_name_to_enum(const std::string &a_var_name)
+    static int variable_name_to_enum(const std::string &a_var_name)
     {
         using namespace UserVariables;
 
