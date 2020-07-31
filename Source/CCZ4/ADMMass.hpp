@@ -91,7 +91,7 @@ class ADMMass
             return;
 
         // user should be able to run this just for the ADM mass
-        auto int_Jadm = ChomboParameters::variable_name_to_enum("Jadm");
+        auto int_Jadm = DiagnosticVariables::variable_name_to_enum("Jadm");
         if (int_Jadm < 0)
             MayDay::Error("Please include 'c_Jadm' in UserVariables with name "
                           "'Jadm'");

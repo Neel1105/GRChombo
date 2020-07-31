@@ -26,16 +26,16 @@ class ADMMassExtraction : public SphericalExtraction
                               a_restart_time),
           extract_J(a_extract_J)
     {
-        add_var(c_Madm);
+        add_var(c_Madm, VariableType::diagnostic);
         if (extract_J)
         {
             // user should be able to run this just for the ADM mass
-            auto int_Jadm = ChomboParameters::variable_name_to_enum("Jadm");
+            auto int_Jadm = DiagnosticVariables::variable_name_to_enum("Jadm");
             if (int_Jadm < 0)
                 MayDay::Error(
                     "Please include 'c_Jadm' in UserVariables with name "
                     "'Jadm'");
-            add_var(int_Jadm);
+            add_var(int_Jadm, VariableType::diagnostic);
         }
     }
 
