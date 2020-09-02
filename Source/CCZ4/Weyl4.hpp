@@ -6,8 +6,7 @@
 #ifndef WEYL4_HPP_
 #define WEYL4_HPP_
 
-#include "BSSNVars.hpp"
-#include "CCZ4Geometry.hpp"
+#include "CCZ4.hpp"
 #include "Cell.hpp"
 #include "Coordinates.hpp"
 #include "FourthOrderDerivatives.hpp"
@@ -51,7 +50,7 @@ class Weyl4
 {
   public:
     // Use the variable definitions containing the needed quantities
-    template <class data_t> using Vars = BSSNVars::VarsWithGauge<data_t>;
+    template <class data_t> using Vars = CCZ4Vars::VarsWithGauge<data_t>;
     template <class data_t>
     using Diff2Vars = ADMConformalVars::Diff2VarsNoGauge<data_t>;
 
@@ -59,8 +58,10 @@ class Weyl4
     /*!
         Takes in the centre for the calculation of the tetrads, and grid spacing
     */
-    Weyl4(const std::array<double, CH_SPACEDIM> a_center, const double a_dx)
-        : m_center(a_center), m_dx(a_dx), m_deriv(a_dx)
+    Weyl4(const std::array<double, CH_SPACEDIM> a_center, const double a_dx,
+          const int a_formulation = CCZ4::USE_CCZ4)
+        : m_center(a_center), m_dx(a_dx), m_deriv(a_dx),
+          m_formulation(a_formulation)
     {
     }
 
@@ -72,6 +73,7 @@ class Weyl4
     const std::array<double, CH_SPACEDIM> m_center; //!< The grid center
     const double m_dx;                              //!< the grid spacing
     const FourthOrderDerivatives m_deriv; //!< for calculating derivs of vars
+    const int m_formulation;
 
     //! Calculation of Weyl_4 scalar
     template <class data_t>

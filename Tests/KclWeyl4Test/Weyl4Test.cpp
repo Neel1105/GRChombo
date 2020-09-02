@@ -214,7 +214,7 @@ int main()
     struct timeval begin, end;
     gettimeofday(&begin, NULL);
 
-    BoxLoops::loop(Weyl4(centerGW, dx), in_fab, out_fab);
+    BoxLoops::loop(Weyl4(centerGW, dx, CCZ4::USE_BSSN), in_fab, out_fab);
 
     gettimeofday(&end, NULL);
 

@@ -33,7 +33,9 @@ template <class data_t> void Weyl4::compute(Cell<data_t> current_cell) const
 }
 
 // Calculation of E and B fields, using tetrads from gr-qc/0104063
-// Formalism from Alcubierre book
+// BSSN expressions from Alcubierre book
+// CCZ4 expressions calculated by MR and checked with TF see:
+// https://www.overleaf.com/read/tvqjbyhvqqtp
 template <class data_t>
 EBFields_t<data_t>
 Weyl4::compute_EB_fields(const Vars<data_t> &vars,
@@ -87,10 +89,27 @@ Weyl4::compute_EB_fields(const Vars<data_t> &vars,
     Tensor<3, data_t> d1_K_tensor;
     Tensor<3, data_t> covariant_deriv_K_tensor;
 
-    // Compute inverse, Christoffel symbols and Ricci Tensor
+    // Compute inverse, Christoffel symbols, Ricci tensor and Z terms
+    // Note that unlike in CCZ4 equations we want R_ij + 0.5(D_iZ_j + D_jZ_i)
+    // rather than R_ij + D_iZ_j + D_jZ_i so take the mean of R_ij and
+    // R_ij + D_iZ_j + D_jZ_i
     using namespace TensorAlgebra;
     const auto chris = compute_christoffel(d1.h, h_UU);
     const auto ricci = CCZ4Geometry::compute_ricci(vars, d1, d2, h_UU, chris);
+    auto ricci_Z = ricci; // BSSN case will keep it like this
+    if (m_formulation == CCZ4::USE_CCZ4)
+    {
+        Tensor<1, data_t> Z_over_chi;
+        FOR1(i) Z_over_chi[i] = 0.5 * (vars.Gamma[i] - chris.contracted[i]);
+        ricci_Z = CCZ4Geometry::compute_ricci_Z(vars, d1, d2, h_UU, chris,
+                                                Z_over_chi);
+    }
+    ricci_t<data_t> ricci_and_Z_terms;
+    FOR2(i, j)
+    {
+        ricci_and_Z_terms.LL[i][j] = 0.5 * (ricci.LL[i][j] + ricci_Z.LL[i][j]);
+    }
+    // don't need ricci scalar so don't bother calculating it
 
     // Compute full spatial Christoffel symbols
     const Tensor<3, data_t> chris_phys =
@@ -130,14 +149,36 @@ Weyl4::compute_EB_fields(const Vars<data_t> &vars,
     FOR4(i, j, k, l)
     {
         out.B[i][j] +=
-            epsilon3_LUU[i][k][l] * (covariant_deriv_K_tensor[l][j][k]);
+            epsilon3_LUU[i][k][l] * covariant_deriv_K_tensor[l][j][k];
+    }
+    // In CCZ4 case do explicit symmetrization; BSSN case relies on momentum
+    // constraint satisfaction instead
+    if (m_formulation == CCZ4::USE_CCZ4)
+    {
+        TensorAlgebra::make_symmetric(out.B);
     }
 
-    FOR2(i, j) { out.E[i][j] += ricci.LL[i][j] + vars.K * K_tensor[i][j]; }
+    FOR2(i, j)
+    {
+        out.E[i][j] += ricci_and_Z_terms.LL[i][j] + vars.K * K_tensor[i][j];
+    }
+
+    if (m_formulation == CCZ4::USE_CCZ4)
+    {
+        FOR2(i, j) { out.E[i][j] += -vars.Theta * K_tensor[i][j]; }
+    }
 
     FOR4(i, j, k, l)
     {
         out.E[i][j] += -K_tensor[i][k] * K_tensor[l][j] * h_UU[k][l] * vars.chi;
+    }
+
+    // The expression in CCZ4 is explicitly trace-free but in BSSN it's only
+    // trace-free if the Hamiltonian constraint is satisfied...
+    // Let's keep this CCZ4 only to avoid breaking the test
+    if (m_formulation == CCZ4::USE_CCZ4)
+    {
+        TensorAlgebra::make_trace_free(out.E, vars.h, h_UU);
     }
 
     return out;
