@@ -64,9 +64,11 @@ class CCZ4Geometry
                 // Trick: For CCZ4, we can add Z terms to ricci by changing
                 // Gamma to chrisvec This way of writing it allows the user to
                 // pass Z/chi = {0};
+                // (MR): I disagree with the above comment
                 ricci_tilde += 0.5 * (vars.h[k][i] * d1.Gamma[k][j] +
                                       vars.h[k][j] * d1.Gamma[k][i]);
-                ricci_tilde += 0.5 * (vars.Gamma[k] - 2 * Z_over_chi[k]) *
+                ricci_tilde += 0.5 * /* (vars.Gamma[k] - 2 * Z_over_chi[k]) **/
+                               chris.contracted[k] *
                                (chris.LLL[i][j][k] + chris.LLL[j][i][k]);
                 FOR1(l)
                 {
@@ -107,6 +109,30 @@ class CCZ4Geometry
         return out;
     }
 
+    template <class data_t>
+    static Tensor<2, data_t>
+    compute_d1_chris_contracted(const Tensor<2, data_t> &h_UU,
+                                const Tensor<2, Tensor<1, data_t>> &d1_h,
+                                const Tensor<2, Tensor<2, data_t>> &d2_h)
+    {
+        Tensor<2, data_t> d1_chris_contracted = 0.0;
+        FOR2(i, j)
+        {
+            FOR3(m, n, p)
+            {
+                data_t d1_terms = 0.0;
+                FOR2(q, r)
+                {
+                    d1_terms += -h_UU[q][r] * (d1_h[n][q][j] * d1_h[m][p][r] +
+                                               d1_h[m][n][j] * d1_h[p][q][r]);
+                }
+                d1_chris_contracted[i][j] +=
+                    h_UU[i][m] * h_UU[n][p] * (d2_h[m][n][j][p] + d1_terms);
+            }
+        }
+        return d1_chris_contracted;
+    }
+
     template <class data_t, template <typename> class vars_t,
               template <typename> class diff2_vars_t>
     static ricci_t<data_t>
@@ -115,8 +141,22 @@ class CCZ4Geometry
                   const diff2_vars_t<Tensor<2, data_t>> &d2,
                   const Tensor<2, data_t> &h_UU, const chris_t<data_t> &chris)
     {
+        // get contributions from conformal metric and factor with zero Z vector
         Tensor<1, data_t> Z0 = 0.;
-        return compute_ricci_Z(vars, d1, d2, h_UU, chris, Z0);
+        auto ricci = compute_ricci_Z(vars, d1, d2, h_UU, chris, Z0);
+
+        // need to add term to correct for d1.Gamma (includes Z contribution)
+        auto d1_chris_contracted =
+            compute_d1_chris_contracted(h_UU, d1.h, d2.h);
+        FOR3(i, j, m)
+        {
+            ricci.LL[i][j] +=
+                0.5 *
+                (vars.h[m][i] * (d1_chris_contracted[m][j] - d1.Gamma[m][j]) +
+                 vars.h[m][j] * (d1_chris_contracted[m][i] - d1.Gamma[m][i]));
+        }
+        ricci.scalar = vars.chi * TensorAlgebra::compute_trace(ricci.LL, h_UU);
+        return ricci;
     }
 };
 
