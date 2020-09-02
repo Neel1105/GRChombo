@@ -145,7 +145,8 @@ class CCZ4Geometry
         Tensor<1, data_t> Z0 = 0.;
         auto ricci = compute_ricci_Z(vars, d1, d2, h_UU, chris, Z0);
 
-        // need to add term to correct for d1.Gamma (includes Z contribution)
+        // need to add term to correct for d1.Gamma as this has contribution
+        // from Z
         auto d1_chris_contracted =
             compute_d1_chris_contracted(h_UU, d1.h, d2.h);
         FOR3(i, j, m)

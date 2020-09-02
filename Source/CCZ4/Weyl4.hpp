@@ -56,7 +56,8 @@ class Weyl4
 
     //! Constructor of class Weyl4
     /*!
-        Takes in the centre for the calculation of the tetrads, and grid spacing
+        Takes in the centre for the calculation of the tetrads, grid spacing and
+        the formulation.
     */
     Weyl4(const std::array<double, CH_SPACEDIM> a_center, const double a_dx,
           const int a_formulation = CCZ4::USE_CCZ4)
@@ -73,7 +74,11 @@ class Weyl4
     const std::array<double, CH_SPACEDIM> m_center; //!< The grid center
     const double m_dx;                              //!< the grid spacing
     const FourthOrderDerivatives m_deriv; //!< for calculating derivs of vars
-    const int m_formulation;
+    const int m_formulation;              //!< CCZ4 or BSSN?
+
+    //! Compute spatial volume element
+    template <class data_t>
+    Tensor<3, data_t> compute_epsilon3_LUU(const Vars<data_t> &vars) const;
 
     //! Calculation of Weyl_4 scalar
     template <class data_t>
@@ -93,7 +98,8 @@ class Weyl4
     //! Magnetic fields
     template <class data_t>
     EBFields_t<data_t>
-    compute_EB_fields(const Vars<data_t> &vars,
+    compute_EB_fields(const Tensor<3, data_t> &epsilon3_LUU,
+                      const Vars<data_t> &vars,
                       const Vars<Tensor<1, data_t>> &d1,
                       const Diff2Vars<Tensor<2, data_t>> &d2,
                       const Coordinates<data_t> &coords) const;
